@@ -1,23 +1,27 @@
-/**
- * Whacka client SDK — _supabase-token (stub)
- *
- * The implementation runs on the Whacka platform and is provided to your app at
- * runtime; it is intentionally NOT part of this export. This stub only keeps
- * your imports resolving and documents which Whacka APIs your code uses. Your
- * own code (components, pages, hooks) is the real, complete export. See README.
- */
+import { supabase } from './auth.js';
 
-const __wk = (path) =>
-  new Proxy(function () {}, {
-    get: (_t, prop) =>
-      typeof prop === 'symbol' || prop === 'then' ? undefined : __wk(path + '.' + prop),
-    apply: () => {
-      throw new Error(
-        '`' + path + '` runs on the Whacka platform and is not available in exported code.'
-      );
-    },
-  });
+let cachedToken = null;
 
-export const getSupabaseToken = __wk('getSupabaseToken');
-export const setSupabaseToken = __wk('setSupabaseToken');
-export const clearSupabaseToken = __wk('clearSupabaseToken');
+export const getSupabaseToken = async () => {
+  try {
+    if (cachedToken) return cachedToken;
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.access_token) {
+      cachedToken = session.access_token;
+      return cachedToken;
+    }
+    return null;
+  } catch (error) {
+    console.error('Get supabase token error:', error);
+    return null;
+  }
+};
+
+export const setSupabaseToken = (token) => {
+  cachedToken = token;
+};
+
+export const clearSupabaseToken = () => {
+  cachedToken = null;
+};

@@ -1,22 +1,54 @@
-/**
- * Whacka client SDK — useLive (stub)
- *
- * The implementation runs on the Whacka platform and is provided to your app at
- * runtime; it is intentionally NOT part of this export. This stub only keeps
- * your imports resolving and documents which Whacka APIs your code uses. Your
- * own code (components, pages, hooks) is the real, complete export. See README.
- */
+import { realtime } from './realtime.js';
+import { useState, useEffect } from 'react';
 
-const __wk = (path) =>
-  new Proxy(function () {}, {
-    get: (_t, prop) =>
-      typeof prop === 'symbol' || prop === 'then' ? undefined : __wk(path + '.' + prop),
-    apply: () => {
-      throw new Error(
-        '`' + path + '` runs on the Whacka platform and is not available in exported code.'
-      );
-    },
-  });
+export const useLiveShared = (path, initialValue = null) => {
+  const [data, setData] = useState(initialValue);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-export const useLiveShared = __wk('useLiveShared');
-export const useLive = __wk('useLive');
+  useEffect(() => {
+    setLoading(true);
+    
+    try {
+      const channel = realtime.subscribe(path.split(':')[0], (payload) => {
+        setData(payload.new || payload.old);
+      });
+
+      return () => {
+        realtime.unsubscribe(channel);
+      };
+    } catch (err) {
+      setError(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [path]);
+
+  return { data, loading, error };
+};
+
+export const useLive = (table, filter = null) => {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    setLoading(true);
+
+    try {
+      const channel = realtime.subscribe(table, (payload) => {
+        setData(payload.new || payload.old);
+      }, filter);
+
+      return () => {
+        realtime.unsubscribe(channel);
+      };
+    } catch (err) {
+      setError(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [table, filter]);
+
+  return { data, loading, error };
+};

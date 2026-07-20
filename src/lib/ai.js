@@ -1,21 +1,53 @@
-/**
- * Whacka client SDK — ai (stub)
- *
- * The implementation runs on the Whacka platform and is provided to your app at
- * runtime; it is intentionally NOT part of this export. This stub only keeps
- * your imports resolving and documents which Whacka APIs your code uses. Your
- * own code (components, pages, hooks) is the real, complete export. See README.
- */
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
 
-const __wk = (path) =>
-  new Proxy(function () {}, {
-    get: (_t, prop) =>
-      typeof prop === 'symbol' || prop === 'then' ? undefined : __wk(path + '.' + prop),
-    apply: () => {
-      throw new Error(
-        '`' + path + '` runs on the Whacka platform and is not available in exported code.'
-      );
-    },
-  });
+const getAuthHeaders = async () => {
+  const { supabase } = await import('./auth.js');
+  const { data: { session } } = await supabase.auth.getSession();
+  return {
+    'Content-Type': 'application/json',
+    ...(session && { 'Authorization': `Bearer ${session.access_token}` }),
+  };
+};
 
-export const ai = __wk('ai');
+export const ai = {
+  async generateSong(prompt, genre = 'pop', mood = 'upbeat', duration = 30) {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/ai/generate-song`, {
+        method: 'POST',
+        headers: await getAuthHeaders(),
+        body: JSON.stringify({ prompt, genre, mood, duration }),
+      });
+      if (!response.ok) throw new Error('Failed to generate song');
+      return response.json();
+    } catch (error) {
+      console.error('Generate song error:', error);
+      throw error;
+    }
+  },
+
+  async getAISongStatus(jobId) {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/ai/songs/${jobId}`, {
+        headers: await getAuthHeaders(),
+      });
+      if (!response.ok) throw new Error('Failed to fetch song status');
+      return response.json();
+    } catch (error) {
+      console.error('Get song status error:', error);
+      throw error;
+    }
+  },
+
+  async getAISongs(limit = 20) {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/ai/songs?limit=${limit}`, {
+        headers: await getAuthHeaders(),
+      });
+      if (!response.ok) throw new Error('Failed to fetch AI songs');
+      return response.json();
+    } catch (error) {
+      console.error('Get AI songs error:', error);
+      throw error;
+    }
+  },
+};

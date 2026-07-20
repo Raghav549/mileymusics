@@ -1,21 +1,45 @@
-/**
- * Whacka client SDK — push (stub)
- *
- * The implementation runs on the Whacka platform and is provided to your app at
- * runtime; it is intentionally NOT part of this export. This stub only keeps
- * your imports resolving and documents which Whacka APIs your code uses. Your
- * own code (components, pages, hooks) is the real, complete export. See README.
- */
+export const push = {
+  async requestPermission() {
+    try {
+      const permission = await Notification.requestPermission();
+      return permission === 'granted';
+    } catch (error) {
+      console.error('Request notification permission error:', error);
+      return false;
+    }
+  },
 
-const __wk = (path) =>
-  new Proxy(function () {}, {
-    get: (_t, prop) =>
-      typeof prop === 'symbol' || prop === 'then' ? undefined : __wk(path + '.' + prop),
-    apply: () => {
-      throw new Error(
-        '`' + path + '` runs on the Whacka platform and is not available in exported code.'
-      );
-    },
-  });
+  async registerServiceWorker() {
+    try {
+      if ('serviceWorker' in navigator) {
+        const registration = await navigator.serviceWorker.register('/sw.js');
+        return registration;
+      }
+    } catch (error) {
+      console.error('Register service worker error:', error);
+    }
+  },
 
-export const push = __wk('push');
+  async subscribeToTopic(topic) {
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: import.meta.env.VITE_FCM_PUBLIC_KEY,
+      });
+      return subscription;
+    } catch (error) {
+      console.error('Subscribe to topic error:', error);
+      throw error;
+    }
+  },
+
+  async showNotification(title, options = {}) {
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      await registration.showNotification(title, options);
+    } catch (error) {
+      console.error('Show notification error:', error);
+    }
+  },
+};

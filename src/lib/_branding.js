@@ -1,24 +1,17 @@
-/**
- * Whacka client SDK — _branding (stub)
- *
- * The implementation runs on the Whacka platform and is provided to your app at
- * runtime; it is intentionally NOT part of this export. This stub only keeps
- * your imports resolving and documents which Whacka APIs your code uses. Your
- * own code (components, pages, hooks) is the real, complete export. See README.
- */
+export const brandingHidden = () => false;
+export const brandingKnown = () => true;
 
-const __wk = (path) =>
-  new Proxy(function () {}, {
-    get: (_t, prop) =>
-      typeof prop === 'symbol' || prop === 'then' ? undefined : __wk(path + '.' + prop),
-    apply: () => {
-      throw new Error(
-        '`' + path + '` runs on the Whacka platform and is not available in exported code.'
-      );
-    },
-  });
+let brandingChangeCallback = null;
 
-export const brandingHidden = __wk('brandingHidden');
-export const brandingKnown = __wk('brandingKnown');
-export const onBrandingChange = __wk('onBrandingChange');
-export const refreshBranding = __wk('refreshBranding');
+export const onBrandingChange = (callback) => {
+  brandingChangeCallback = callback;
+};
+
+export const refreshBranding = async () => {
+  if (brandingChangeCallback) {
+    brandingChangeCallback({
+      hidden: false,
+      known: true,
+    });
+  }
+};

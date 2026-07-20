@@ -1,22 +1,29 @@
-/**
- * Whacka client SDK — auth (stub)
- *
- * The implementation runs on the Whacka platform and is provided to your app at
- * runtime; it is intentionally NOT part of this export. This stub only keeps
- * your imports resolving and documents which Whacka APIs your code uses. Your
- * own code (components, pages, hooks) is the real, complete export. See README.
- */
+import { createClient } from '@supabase/supabase-js';
 
-const __wk = (path) =>
-  new Proxy(function () {}, {
-    get: (_t, prop) =>
-      typeof prop === 'symbol' || prop === 'then' ? undefined : __wk(path + '.' + prop),
-    apply: () => {
-      throw new Error(
-        '`' + path + '` runs on the Whacka platform and is not available in exported code.'
-      );
-    },
-  });
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-export const auth = __wk('auth');
-export const adoptSession = __wk('adoptSession');
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase credentials in environment variables');
+}
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+export const auth = supabase.auth;
+
+export const adoptSession = async (accessToken, refreshToken) => {
+  try {
+    const { data, error } = await supabase.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    });
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Adopt session error:', error);
+    throw error;
+  }
+};
+
+export default supabase;

@@ -1,21 +1,40 @@
-/**
- * Whacka client SDK — download (stub)
- *
- * The implementation runs on the Whacka platform and is provided to your app at
- * runtime; it is intentionally NOT part of this export. This stub only keeps
- * your imports resolving and documents which Whacka APIs your code uses. Your
- * own code (components, pages, hooks) is the real, complete export. See README.
- */
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
 
-const __wk = (path) =>
-  new Proxy(function () {}, {
-    get: (_t, prop) =>
-      typeof prop === 'symbol' || prop === 'then' ? undefined : __wk(path + '.' + prop),
-    apply: () => {
-      throw new Error(
-        '`' + path + '` runs on the Whacka platform and is not available in exported code.'
+const getAuthHeaders = async () => {
+  const { supabase } = await import('./auth.js');
+  const { data: { session } } = await supabase.auth.getSession();
+  return {
+    'Content-Type': 'application/json',
+    ...(session && { 'Authorization': `Bearer ${session.access_token}` }),
+  };
+};
+
+export const download = {
+  async recordDownload(songId) {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/songs/${songId}/download`, {
+        method: 'POST',
+        headers: await getAuthHeaders(),
+      });
+      if (!response.ok) throw new Error('Failed to record download');
+      return response.json();
+    } catch (error) {
+      console.error('Record download error:', error);
+      throw error;
+    }
+  },
+
+  async getDownloads(limit = 50) {
+    try {
+      const response = await fetch(
+        `${BACKEND_URL}/api/downloads?limit=${limit}`,
+        { headers: await getAuthHeaders() }
       );
-    },
-  });
-
-export const download = __wk('download');
+      if (!response.ok) throw new Error('Failed to fetch downloads');
+      return response.json();
+    } catch (error) {
+      console.error('Get downloads error:', error);
+      throw error;
+    }
+  },
+};

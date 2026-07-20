@@ -1,22 +1,22 @@
-/**
- * Whacka client SDK — _rate-limit (stub)
- *
- * The implementation runs on the Whacka platform and is provided to your app at
- * runtime; it is intentionally NOT part of this export. This stub only keeps
- * your imports resolving and documents which Whacka APIs your code uses. Your
- * own code (components, pages, hooks) is the real, complete export. See README.
- */
+export const handleRateLimit = (error) => {
+  if (error.status === 429) {
+    console.warn('Rate limit exceeded');
+    return true;
+  }
+  return false;
+};
 
-const __wk = (path) =>
-  new Proxy(function () {}, {
-    get: (_t, prop) =>
-      typeof prop === 'symbol' || prop === 'then' ? undefined : __wk(path + '.' + prop),
-    apply: () => {
-      throw new Error(
-        '`' + path + '` runs on the Whacka platform and is not available in exported code.'
-      );
-    },
-  });
-
-export const handleRateLimit = __wk('handleRateLimit');
-export const fetchWithCreditRetry = __wk('fetchWithCreditRetry');
+export const fetchWithCreditRetry = async (url, options = {}) => {
+  try {
+    const response = await fetch(url, options);
+    if (response.status === 429) {
+      // Wait before retrying
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      return fetch(url, options);
+    }
+    return response;
+  } catch (error) {
+    console.error('Fetch with credit retry error:', error);
+    throw error;
+  }
+};

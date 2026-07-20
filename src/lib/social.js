@@ -1,21 +1,70 @@
-/**
- * Whacka client SDK — social (stub)
- *
- * The implementation runs on the Whacka platform and is provided to your app at
- * runtime; it is intentionally NOT part of this export. This stub only keeps
- * your imports resolving and documents which Whacka APIs your code uses. Your
- * own code (components, pages, hooks) is the real, complete export. See README.
- */
+import { db } from './db.js';
 
-const __wk = (path) =>
-  new Proxy(function () {}, {
-    get: (_t, prop) =>
-      typeof prop === 'symbol' || prop === 'then' ? undefined : __wk(path + '.' + prop),
-    apply: () => {
-      throw new Error(
-        '`' + path + '` runs on the Whacka platform and is not available in exported code.'
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+
+const getAuthHeaders = async () => {
+  const { supabase } = await import('./auth.js');
+  const { data: { session } } = await supabase.auth.getSession();
+  return {
+    'Content-Type': 'application/json',
+    ...(session && { 'Authorization': `Bearer ${session.access_token}` }),
+  };
+};
+
+export const social = {
+  async follow(userId) {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/users/${userId}/follow`, {
+        method: 'POST',
+        headers: await getAuthHeaders(),
+      });
+      if (!response.ok) throw new Error('Failed to follow');
+      return response.json();
+    } catch (error) {
+      console.error('Follow error:', error);
+      throw error;
+    }
+  },
+
+  async unfollow(userId) {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/users/${userId}/follow`, {
+        method: 'DELETE',
+        headers: await getAuthHeaders(),
+      });
+      if (!response.ok) throw new Error('Failed to unfollow');
+      return response.json();
+    } catch (error) {
+      console.error('Unfollow error:', error);
+      throw error;
+    }
+  },
+
+  async getFollowers(userId, limit = 50) {
+    try {
+      const response = await fetch(
+        `${BACKEND_URL}/api/users/${userId}/followers?limit=${limit}`,
+        { headers: await getAuthHeaders() }
       );
-    },
-  });
+      if (!response.ok) throw new Error('Failed to fetch followers');
+      return response.json();
+    } catch (error) {
+      console.error('Get followers error:', error);
+      throw error;
+    }
+  },
 
-export const social = __wk('social');
+  async getFollowing(userId, limit = 50) {
+    try {
+      const response = await fetch(
+        `${BACKEND_URL}/api/users/${userId}/following?limit=${limit}`,
+        { headers: await getAuthHeaders() }
+      );
+      if (!response.ok) throw new Error('Failed to fetch following');
+      return response.json();
+    } catch (error) {
+      console.error('Get following error:', error);
+      throw error;
+    }
+  },
+};

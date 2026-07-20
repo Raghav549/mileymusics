@@ -1,22 +1,28 @@
-/**
- * Whacka client SDK — share (stub)
- *
- * The implementation runs on the Whacka platform and is provided to your app at
- * runtime; it is intentionally NOT part of this export. This stub only keeps
- * your imports resolving and documents which Whacka APIs your code uses. Your
- * own code (components, pages, hooks) is the real, complete export. See README.
- */
+export const isInAppBrowser = () => {
+  const userAgent = window.navigator.userAgent;
+  return (
+    userAgent.includes('Instagram') ||
+    userAgent.includes('FBAN') ||
+    userAgent.includes('FBAV')
+  );
+};
 
-const __wk = (path) =>
-  new Proxy(function () {}, {
-    get: (_t, prop) =>
-      typeof prop === 'symbol' || prop === 'then' ? undefined : __wk(path + '.' + prop),
-    apply: () => {
-      throw new Error(
-        '`' + path + '` runs on the Whacka platform and is not available in exported code.'
-      );
-    },
-  });
-
-export const isInAppBrowser = __wk('isInAppBrowser');
-export const share = __wk('share');
+export const share = async (title, text, url) => {
+  try {
+    if (navigator.share) {
+      await navigator.share({
+        title,
+        text,
+        url,
+      });
+    } else {
+      // Fallback: copy to clipboard
+      const shareUrl = `${url}?share=${encodeURIComponent(title)}`;
+      await navigator.clipboard.writeText(shareUrl);
+      alert('Link copied to clipboard!');
+    }
+  } catch (error) {
+    console.error('Share error:', error);
+    throw error;
+  }
+};

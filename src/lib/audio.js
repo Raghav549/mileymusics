@@ -1,21 +1,38 @@
-/**
- * Whacka client SDK — audio (stub)
- *
- * The implementation runs on the Whacka platform and is provided to your app at
- * runtime; it is intentionally NOT part of this export. This stub only keeps
- * your imports resolving and documents which Whacka APIs your code uses. Your
- * own code (components, pages, hooks) is the real, complete export. See README.
- */
+export const audio = {
+  // Audio context for playback
+  context: null,
 
-const __wk = (path) =>
-  new Proxy(function () {}, {
-    get: (_t, prop) =>
-      typeof prop === 'symbol' || prop === 'then' ? undefined : __wk(path + '.' + prop),
-    apply: () => {
-      throw new Error(
-        '`' + path + '` runs on the Whacka platform and is not available in exported code.'
-      );
-    },
-  });
+  async createAudioContext() {
+    if (!this.context) {
+      this.context = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    return this.context;
+  },
 
-export const audio = __wk('audio');
+  async playAudio(url) {
+    try {
+      const context = await this.createAudioContext();
+      const response = await fetch(url);
+      const buffer = await response.arrayBuffer();
+      const audioBuffer = await context.decodeAudioData(buffer);
+
+      const source = context.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(context.destination);
+      source.start();
+
+      return source;
+    } catch (error) {
+      console.error('Play audio error:', error);
+      throw error;
+    }
+  },
+
+  async stopAudio(source) {
+    try {
+      source.stop();
+    } catch (error) {
+      console.error('Stop audio error:', error);
+    }
+  },
+};

@@ -1,21 +1,11 @@
-/**
- * Whacka client SDK — _client-report (stub)
- *
- * The implementation runs on the Whacka platform and is provided to your app at
- * runtime; it is intentionally NOT part of this export. This stub only keeps
- * your imports resolving and documents which Whacka APIs your code uses. Your
- * own code (components, pages, hooks) is the real, complete export. See README.
- */
-
-const __wk = (path) =>
-  new Proxy(function () {}, {
-    get: (_t, prop) =>
-      typeof prop === 'symbol' || prop === 'then' ? undefined : __wk(path + '.' + prop),
-    apply: () => {
-      throw new Error(
-        '`' + path + '` runs on the Whacka platform and is not available in exported code.'
-      );
-    },
+export const installClientErrorReporting = (options = {}) => {
+  // Set up error reporting
+  window.addEventListener('error', (event) => {
+    console.error('Unhandled error:', event.error);
+    // Could send to Sentry or other error tracking service
   });
 
-export const installClientErrorReporting = __wk('installClientErrorReporting');
+  window.addEventListener('unhandledrejection', (event) => {
+    console.error('Unhandled rejection:', event.reason);
+  });
+};

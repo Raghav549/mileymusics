@@ -1,22 +1,21 @@
-/**
- * Whacka client SDK — user (stub)
- *
- * The implementation runs on the Whacka platform and is provided to your app at
- * runtime; it is intentionally NOT part of this export. This stub only keeps
- * your imports resolving and documents which Whacka APIs your code uses. Your
- * own code (components, pages, hooks) is the real, complete export. See README.
- */
+import { supabase } from './auth.js';
 
-const __wk = (path) =>
-  new Proxy(function () {}, {
-    get: (_t, prop) =>
-      typeof prop === 'symbol' || prop === 'then' ? undefined : __wk(path + '.' + prop),
-    apply: () => {
-      throw new Error(
-        '`' + path + '` runs on the Whacka platform and is not available in exported code.'
-      );
-    },
-  });
+export const getAppUserId = async () => {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.user?.id || null;
+  } catch (error) {
+    console.error('Get app user ID error:', error);
+    return null;
+  }
+};
 
-export const getAppUserId = __wk('getAppUserId');
-export const getAnonymousId = __wk('getAnonymousId');
+export const getAnonymousId = () => {
+  // Get or create anonymous ID from localStorage
+  let anonId = localStorage.getItem('mileymusics_anon_id');
+  if (!anonId) {
+    anonId = `anon_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    localStorage.setItem('mileymusics_anon_id', anonId);
+  }
+  return anonId;
+};
